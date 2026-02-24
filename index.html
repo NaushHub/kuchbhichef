@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kuch Bhi Chef — AI Recipe Generator</title>
+  <meta name="description" content="Tell me what's in your kitchen and I'll cook up recipe ideas. When they say Kuch bhi bana do — I've got you." />
+  <meta property="og:title" content="Kuch Bhi Chef — AI Recipe Generator" />
+  <meta property="og:description" content="Tell me what's in your kitchen and I'll cook up recipe ideas. When they say Kuch bhi bana do — I've got you." />
+  <meta property="og:type" content="website" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef } = React;
+
+    const SUGGESTED = ["chicken","eggs","pasta","rice","tomatoes","onion","garlic","butter","cheese","spinach","potatoes","lemon","olive oil","bread","milk"];
+    const COMMON_ALLERGENS = ["nuts","peanuts","shellfish","fish","eggs","dairy","gluten","soy","sesame","wheat"];
+    const MEAL_TYPES = ["Any","Breakfast","Tiffin","Lunch","Dinner","Snack","Dessert"];
+    const DIETARY = ["None","Vegetarian","Vegan","Gluten-Free","Dairy-Free","Low-Carb","High-Protein"];
+    const TIME_OPTS = ["Under 15 min","Under 30 min","Under 1 hour","No limit"];
+    const CUISINES = [
+      {label:"Any",emoji:"🌍"},{label:"Indian",emoji:"🇮🇳"},{label:"Italian",emoji:"🇮🇹"},
+      {label:"Chinese",emoji:"🇨🇳"},{label:"Thai",emoji:"🇹🇭"},{label:"American",emoji:"🇺🇸"},
+      {label:"Middle Eastern",emoji:"🌙"},{label:"Korean",emoji:"🇰🇷"},
+    ];
+    const SCHEMA = `{"recipes":[{"name":"","time":"","difficulty":"","emoji":"","description":"","calories":"","servings":"","ingredients_needed":[{"name":"","amount":"","unit":"","have":true}],"missing_ingredients":[],"steps":[{"instruction":"","visual":""}],"tip":""}]}`;
+
+    async function claudeComplete(prompt) {
+      const res = await fetch("/.netlify/functions/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "API error");
+      return data.text;
+    }
+
+    function Tag({ label, onRemove, color }) {
+      const cls = color === "red"
+        ? "bg-red-100 text-red-600 border-red-200"
+        : "bg-orange-100 text-orange-700 border-orange-200";
+      return (
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${cls}`}>
+          {label}
+          <button onClick={onRemove}>
+            <svg className="w-3 h-3 opacity-60 hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </span>
+      );
+    }
+
+    function Dropdown({ label, options, value, onChange }) {
+      return (
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">{label}</label>
+          <select value={value} onChange={e => onChange(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:border-orange-400 cursor-pointer">
+            {options.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+      );
+    }
+
+    function MultiSelect({ label, options, value, onChange }) {
+      const [open, setOpen] = useState(false);
+      const toggle = opt => {
+        if (opt === "Any" || opt === "None") { onChange([opt]); setOpen(false); return; }
+        const filtered = value.filter(v => v !== "Any" && v !== "None");
+        const next = filtered.includes(opt) ? filtered.filter(v => v !== opt) : [...filtered, opt];
+        onChange(next.length ? next : ["Any"]);
+      };
+      const display = value.join(", ") || "Any";
+      return (
+        <div className="relative">
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">{label}</label>
+          <button onClick={() => setOpen(o => !o)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 outline-none text-left flex items-center justify-between hover:border-orange-400 transition-colors">
+            <span className="truncate">{display}</span>
+            <span className="ml-1 text-gray-400">{open ? "▲" : "▼"}</span>
+          </button>
+          {open && (
+            <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+              {options.map(o => {
+                const val = typeof o === "string" ? o : o.label;
+                const lbl = typeof o === "string" ? o : `${o.emoji} ${o.label}`;
+                const sel = value.includes(val);
+                return (
+                  <button key={val} onClick={() => toggle(val)}
+                    className={`w-full text-left px-3 py-1 text-sm font-semibold flex items-center justify-between transition-colors ${sel ? "bg-orange-50 text-orange-600" : "text-gray-700 hover:bg-gray-50"}`}>
+                    {lbl}
+                    {sel && <span className="text-orange-500 text-xs">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function Spinner() {
+      return <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="4"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg>;
+    }
+
+    function ChefAI() {
+      const [ingInput, setIngInput] = useState("");
+      const [ingredients, setIngredients] = useState([]);
+      const [algInput, setAlgInput] = useState("");
+      const [allergens, setAllergens] = useState([]);
+      const [mealType, setMealType] = useState(["Any"]);
+      const [dietary, setDietary] = useState(["None"]);
+      const [cookTime, setCookTime] = useState("No limit");
+      const [cuisine, setCuisine] = useState(["Any"]);
+      const [recipes, setRecipes] = useState(null);
+      const [selected, setSelected] = useState(null);
+      const [stepImages, setStepImages] = useState({});
+      const [loading, setLoading] = useState(false);
+      const [loadingMore, setLoadingMore] = useState(false);
+      const [filtering, setFiltering] = useState(false);
+      const [error, setError] = useState("");
+      const [naInput, setNaInput] = useState("");
+      const [notAvailable, setNotAvailable] = useState([]);
+
+      const rIngs = useRef([]); const rAlgs = useRef([]); const rNA = useRef([]);
+      const rMeal = useRef(["Any"]); const rDiet = useRef(["None"]);
+      const rTime = useRef("No limit"); const rCuis = useRef(["Any"]);
+      const rRecipes = useRef(null);
+
+      function si(setter, ref) { return v => { setter(v); ref.current = v; }; }
+      const setIngs = si(setIngredients, rIngs);
+      const setAlgs = si(setAllergens, rAlgs);
+      const setNA = si(setNotAvailable, rNA);
+      const setMeal = si(setMealType, rMeal);
+      const setDiet = si(setDietary, rDiet);
+      const setTime = si(setCookTime, rTime);
+      const setCuis = si(setCuisine, rCuis);
+      const setRecs = v => { setRecipes(v); rRecipes.current = v; };
+
+      const addIng = val => {
+        const v = (val || ingInput).trim().toLowerCase();
+        if (v && !rIngs.current.includes(v)) setIngs([...rIngs.current, v]);
+        setIngInput("");
+      };
+      const addAlg = val => {
+        const v = (val || algInput).trim().toLowerCase();
+        if (v && !rAlgs.current.includes(v)) setAlgs([...rAlgs.current, v]);
+        setAlgInput("");
+      };
+      const addNA = val => {
+        const v = (val || naInput).trim().toLowerCase();
+        if (v && !rNA.current.includes(v)) setNA([...rNA.current, v]);
+        setNaInput("");
+      };
+      const randomize = () => setIngs([...SUGGESTED].sort(() => 0.5 - Math.random()).slice(0, 6));
+
+      const buildPrompt = (count, exclude = []) => {
+        const avoid = [...rAlgs.current, ...rNA.current];
+        return `You are a creative chef. Ingredients available: ${rIngs.current.join(", ")}.
+Meal type: ${rMeal.current.join(", ")}. Dietary: ${rDiet.current.join(", ")}. Time: ${rTime.current}. Cuisine: ${rCuis.current.join(", ")}.
+${avoid.length ? `STRICT — never use: ${avoid.join(", ")}.` : ""}
+${exclude.length ? `Do NOT repeat these recipes: ${exclude.join(", ")}.` : ""}
+Suggest exactly ${count} recipe${count > 1 ? "s" : ""}. For each ingredient, set "have":true if the ingredient is in the user's available list, "have":false if it is not. Also populate missing_ingredients with names of ingredients where have=false. Include estimated "calories" per serving as a string like "320 kcal" and "servings" as a string like "Serves 2" or "Serves 4". For each step include a short "visual" (5-8 words) for image search.
+Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
+      };
+
+      const parse = text => JSON.parse(text.replace(/\`\`\`json|\`\`\`/g, "").trim()).recipes;
+
+      const openRecipe = r => {
+        const tagged = (r.ingredients_needed || []).map(ing => ({
+          name: typeof ing === "string" ? ing : (ing.name || ""),
+          amount: ing.amount || "",
+          unit: ing.unit || "",
+          isMissing: ing.have === false,
+        }));
+        setSelected({ ...r, _tagged: tagged });
+        const imgs = {};
+        (r.steps || []).forEach((s, i) => {
+          if (s.visual) imgs[i] = `https://source.unsplash.com/400x200/?${encodeURIComponent(s.visual + " food")}`;
+        });
+        setStepImages(imgs);
+      };
+
+      const findRecipes = async () => {
+        if (!rIngs.current.length) return;
+        setLoading(true); setRecs(null); setSelected(null); setError(""); setNA([]);
+        try {
+          const text = await claudeComplete(buildPrompt(4));
+          setRecs(parse(text));
+        } catch (e) { setError("Error: " + e.message); }
+        finally { setLoading(false); }
+      };
+
+      const loadMore = async () => {
+        setLoadingMore(true); setError("");
+        try {
+          const exclude = (rRecipes.current || []).map(r => r.name);
+          const text = await claudeComplete(buildPrompt(3, exclude));
+          setRecs([...rRecipes.current, ...parse(text)]);
+        } catch (e) { setError("Error: " + e.message); }
+        finally { setLoadingMore(false); }
+      };
+
+      const applyFilter = async () => {
+        if (!rNA.current.length) return;
+        setFiltering(true); setError("");
+        const toAvoid = rNA.current;
+        const kept = (rRecipes.current || []).filter(r => {
+          const allIngs = [...(r.ingredients_needed || []).map(i => typeof i === "string" ? i : i.name || ""), ...(r.missing_ingredients || [])].map(s => s.toLowerCase());
+          return !toAvoid.some(na => allIngs.some(ing => ing.includes(na) || na.includes(ing)));
+        });
+        const removed = (rRecipes.current || []).length - kept.length;
+        try {
+          if (removed > 0) {
+            const exclude = kept.map(r => r.name);
+            const text = await claudeComplete(buildPrompt(removed, exclude));
+            setRecs([...kept, ...parse(text).slice(0, removed)]);
+          } else {
+            setRecs([...kept]);
+          }
+          setNA([]); setNaInput("");
+        } catch (e) { setError("Error: " + e.message); }
+        finally { setFiltering(false); }
+      };
+
+      const getAvailable = r => {
+        const missing = r.missing_ingredients || [];
+        return (r.ingredients_needed || [])
+          .map(ing => typeof ing === "string" ? ing : ing.name || "")
+          .filter(n => n && !missing.some(m => m.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(m.toLowerCase())));
+      };
+
+      return (
+        <div className="min-h-screen bg-[#faf8f5] flex justify-center p-4 pt-8 pb-16">
+          <div className="w-full max-w-4xl space-y-4">
+
+            <div className="text-center pb-2">
+              <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-full text-sm font-bold mb-4 shadow-sm">
+                🍳 Kuch Bhi Chef
+              </div>
+              <h1 className="text-4xl font-black text-gray-900 tracking-tight">What's in your kitchen?</h1>
+              <p className="text-gray-500 mt-2 text-base italic">When they tell you <span className="font-bold text-orange-500">Kuch bhi bana do</span> (make anything) —</p>
+              <p className="text-gray-400 text-sm mt-1">just tell me what you have in the kitchen and I'll cook up some ideas.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-black text-gray-800 text-sm">🧺 Your Ingredients</h2>
+                  <button onClick={randomize} className="flex items-center gap-1 text-xs text-gray-400 hover:text-orange-500 font-semibold">
+                    🔀 Random
+                  </button>
+                </div>
+                <div className="flex gap-2 mb-3">
+                  <input value={ingInput} onChange={e => setIngInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addIng()}
+                    placeholder="Add ingredient..." className="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400" />
+                  <button onClick={() => addIng()} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
+                </div>
+                {ingredients.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {ingredients.map((ing, i) => <Tag key={i} label={ing} color="orange" onRemove={() => setIngs(rIngs.current.filter((_, j) => j !== i))} />)}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {SUGGESTED.filter(s => !ingredients.includes(s)).slice(0, 6).map(s => (
+                    <button key={s} onClick={() => addIng(s)} className="text-xs text-gray-400 hover:text-orange-600 hover:bg-orange-50 bg-gray-50 px-2.5 py-1 rounded-full font-medium border border-gray-100">+ {s}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-red-50">
+                <h2 className="font-black text-gray-800 text-sm mb-3">🚫 Avoid / Allergies</h2>
+                <div className="flex gap-2 mb-3">
+                  <input value={algInput} onChange={e => setAlgInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addAlg()}
+                    placeholder="e.g. peanuts..." className="flex-1 min-w-0 bg-red-50 border border-red-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-300" />
+                  <button onClick={() => addAlg()} className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
+                </div>
+                {allergens.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {allergens.map((a, i) => <Tag key={i} label={a} color="red" onRemove={() => setAlgs(rAlgs.current.filter((_, j) => j !== i))} />)}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {COMMON_ALLERGENS.filter(a => !allergens.includes(a)).slice(0, 6).map(a => (
+                    <button key={a} onClick={() => addAlg(a)} className="text-xs text-red-400 hover:text-red-600 bg-red-50 px-2.5 py-1 rounded-full font-medium border border-red-100">+ {a}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <div className="grid grid-cols-4 gap-4">
+                <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
+                <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} />
+                <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
+                <Dropdown label="Cook Time" options={TIME_OPTS} value={cookTime} onChange={setTime} />
+              </div>
+            </div>
+
+            <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
+              {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
+            </button>
+            {error && <p className="text-red-400 text-sm text-center font-medium">{error}</p>}
+
+            {recipes && !selected && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                <h2 className="font-black text-gray-800 text-sm mb-1">⚠️ Missing an ingredient from the recipes below?</h2>
+                <p className="text-xs text-gray-400 mb-3">Add it here — I'll swap out recipes that need it and suggest new ones.</p>
+                <div className="flex gap-2 mb-3">
+                  <input value={naInput} onChange={e => setNaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addNA()}
+                    placeholder="e.g. green chilli..." className="flex-1 min-w-0 bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400" />
+                  <button onClick={() => addNA()} className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
+                </div>
+                {notAvailable.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {notAvailable.map((a, i) => (
+                        <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border bg-amber-100 text-amber-700 border-amber-200">
+                          {a}<button onClick={() => setNA(rNA.current.filter((_, j) => j !== i))}>
+                            <svg className="w-3 h-3 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <button onClick={applyFilter} disabled={filtering}
+                      className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-2">
+                      {filtering ? <><Spinner /> Finding replacements...</> : "✨ Update Recipe List"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {recipes && !selected && (
+              <div className="space-y-3">
+                <h2 className="font-black text-gray-800 text-lg">✨ Recipe Ideas</h2>
+                {recipes.map((r, i) => {
+                  const missing = r.missing_ingredients || [];
+                  const available = getAvailable(r);
+                  return (
+                    <button key={i} onClick={() => openRecipe(r)}
+                      className="w-full bg-white rounded-2xl p-5 text-left hover:shadow-md transition-all shadow-sm border border-gray-100 group">
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl mt-1">{r.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-black text-gray-900 text-base group-hover:text-orange-500 transition-colors">{r.name}</h3>
+                          <p className="text-gray-400 text-sm mt-0.5 mb-2">{r.description}</p>
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="inline-flex items-center gap-1 text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-bold border border-orange-100">⏱ {r.time}</span>
+                            <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-bold">⚡ {r.difficulty}</span>
+                            {r.calories && <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-bold border border-green-100">🔥 {r.calories}</span>}
+                            {r.servings && <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-500 px-2.5 py-1 rounded-full font-bold border border-blue-100">👤 {r.servings}</span>}
+                          </div>
+                          {available.length > 0 && (
+                            <div className="flex flex-wrap gap-1 items-center mb-1">
+                              <span className="text-xs text-gray-400 font-semibold">You have:</span>
+                              {available.map((a, j) => (
+                                <span key={j} className="text-xs text-green-600 font-semibold bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">{a}</span>
+                              ))}
+                            </div>
+                          )}
+                          {missing.length > 0 && (
+                            <div className="flex flex-wrap gap-1 items-center">
+                              <span className="text-xs text-gray-400 font-semibold">You may also need:</span>
+                              {missing.map((m, j) => (
+                                <span key={j} className="text-xs text-red-500 font-semibold bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">{m}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-gray-300 group-hover:text-orange-400 text-lg mt-1">›</span>
+                      </div>
+                    </button>
+                  );
+                })}
+                <button onClick={loadMore} disabled={loadingMore}
+                  className="w-full bg-white hover:bg-orange-50 border-2 border-dashed border-orange-200 hover:border-orange-400 text-orange-500 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2">
+                  {loadingMore ? <><Spinner /> Loading more...</> : "＋ Load More Recipes"}
+                </button>
+              </div>
+            )}
+
+            {selected && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="relative h-64 bg-orange-50 overflow-hidden">
+                  <img src={`https://source.unsplash.com/800x400/?${encodeURIComponent(selected.name + " food plated")}`}
+                    alt={selected.name} className="w-full h-full object-cover"
+                    onError={e => { e.target.style.display = "none"; }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                  <div className="absolute bottom-5 left-6 text-white">
+                    <div className="text-4xl mb-1">{selected.emoji}</div>
+                    <h2 className="text-2xl font-black drop-shadow">{selected.name}</h2>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">⏱ {selected.time}</span>
+                      <span className="inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">⚡ {selected.difficulty}</span>
+                      {selected.calories && <span className="text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">🔥 {selected.calories}</span>}
+                      {selected.servings && <span className="text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">👤 {selected.servings}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-7">
+                  <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 font-bold mb-5 transition-colors">
+                    ← Back to results
+                  </button>
+                  <p className="text-gray-400 mb-7">{selected.description}</p>
+
+                  <div className="mb-8">
+                    <h3 className="font-black text-gray-800 mb-3 text-xs uppercase tracking-wide">Ingredients & Measurements</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(selected._tagged || []).map((ing, i) => (
+                        <div key={i} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                          <span className={`text-sm font-semibold capitalize ${ing.isMissing ? "text-red-500" : "text-green-600"}`}>{ing.name}</span>
+                          <span className={`text-sm font-bold ml-3 whitespace-nowrap ${ing.isMissing ? "text-red-400" : "text-green-500"}`}>{ing.amount} {ing.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {(selected.missing_ingredients || []).length > 0 && (
+                      <p className="text-xs text-red-400 mt-2 font-medium">🔴 Red = you'll need to grab these</p>
+                    )}
+                  </div>
+
+                  <div className="mb-7">
+                    <h3 className="font-black text-gray-800 mb-4 text-xs uppercase tracking-wide">Steps</h3>
+                    <div className="space-y-6">
+                      {(selected.steps || []).map((step, i) => {
+                        const instruction = typeof step === "string" ? step : step.instruction;
+                        const imgSrc = stepImages[i];
+                        return (
+                          <div key={i} className="flex gap-4 items-start">
+                            <span className="w-7 h-7 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">{i + 1}</span>
+                            <div className="flex-1">
+                              <p className="text-gray-600 leading-relaxed text-sm mb-2">{instruction}</p>
+                              {imgSrc && (
+                                <div className="rounded-xl overflow-hidden h-36 bg-gray-100">
+                                  <img src={imgSrc} alt={`step ${i + 1}`} className="w-full h-full object-cover"
+                                    onError={e => { e.target.parentElement.style.display = "none"; }} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {selected.tip && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                      <p className="text-amber-700 text-sm font-medium">💡 <strong>Pro tip:</strong> {selected.tip}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<ChefAI />);
+  </script>
+</body>
+</html>
