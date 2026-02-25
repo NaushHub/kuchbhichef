@@ -175,7 +175,13 @@ Suggest exactly ${count} recipe${count > 1 ? "s" : ""}. For each ingredient, set
 Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
       };
 
-      const parse = text => JSON.parse(text.replace(/\`\`\`json|\`\`\`/g, "").trim()).recipes;
+      const parse = text => {
+        let cleaned = text.replace(/```json|```/gi, "").trim();
+        const start = cleaned.indexOf("{");
+        const end = cleaned.lastIndexOf("}");
+        if (start !== -1 && end !== -1) cleaned = cleaned.slice(start, end + 1);
+        return JSON.parse(cleaned).recipes;
+      };
 
       const openRecipe = r => {
         const tagged = (r.ingredients_needed || []).map(ing => ({
