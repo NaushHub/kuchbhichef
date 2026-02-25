@@ -308,98 +308,101 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
       };
 
       return (
-        <div className="min-h-screen bg-[#faf8f5] flex justify-center p-4 pt-8 pb-16">
-          <div className="w-full max-w-4xl space-y-4">
+        <div className="min-h-screen bg-[#faf8f5] flex justify-center p-4 pb-16">
+          <div className="w-full max-w-7xl space-y-4">
 
-            <div className="text-center pb-2">
-              <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-full text-sm font-bold mb-4 shadow-sm">
-                🍳 Kuch Bhi Chef
+            {/* BANNER */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-5">
+
+              {/* Header */}
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-full text-sm font-bold mb-3 shadow-sm">
+                  🍳 Kuch Bhi Chef
+                </div>
+                <h1 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tight">What's in your kitchen?</h1>
+                <p className="text-gray-500 mt-1 text-sm italic">When they tell you <span className="font-bold text-orange-500">Kuch bhi bana do</span> (make anything) — just tell me what you have and I'll cook up some ideas.</p>
               </div>
-              <h1 className="text-4xl font-black text-gray-900 tracking-tight">What's in your kitchen?</h1>
-              <p className="text-gray-500 mt-2 text-base italic">When they tell you <span className="font-bold text-orange-500">Kuch bhi bana do</span> (make anything) —</p>
-              <p className="text-gray-400 text-sm mt-1">just tell me what you have in the kitchen and I'll cook up some ideas.</p>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-black text-gray-800 text-sm">🧺 Your Ingredients</h2>
-                  <button onClick={randomize} className="flex items-center gap-1 text-xs text-gray-400 hover:text-orange-500 font-semibold">
-                    🔀 Random
+              {/* Row 1: Ingredients + Allergies + Filters */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+
+                {/* Ingredients */}
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="font-black text-gray-800 text-sm">🧺 Your Ingredients</h2>
+                    <button onClick={randomize} className="text-xs text-gray-400 hover:text-orange-500 font-semibold">🔀 Random</button>
+                  </div>
+                  <div className="flex gap-2 mb-2">
+                    <input value={ingInput} onChange={e => setIngInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addIng()}
+                      placeholder="Add ingredient..." className="flex-1 min-w-0 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400" />
+                    <button onClick={() => addIng()} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
+                  </div>
+                  {ingredients.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {ingredients.map((ing, i) => <Tag key={i} label={ing} color="orange" onRemove={() => setIngs(rIngs.current.filter((_, j) => j !== i))} />)}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUGGESTED.filter(s => !ingredients.includes(s)).slice(0, 6).map(s => (
+                      <button key={s} onClick={() => addIng(s)} className="text-xs text-gray-400 hover:text-orange-600 hover:bg-orange-50 bg-white px-2.5 py-1 rounded-full font-medium border border-gray-100">+ {s}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Allergies */}
+                <div className="bg-red-50/50 rounded-2xl p-4 border border-red-100">
+                  <h2 className="font-black text-gray-800 text-sm mb-2">🚫 Avoid / Allergies</h2>
+                  <div className="flex gap-2 mb-2">
+                    <input value={algInput} onChange={e => setAlgInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addAlg()}
+                      placeholder="e.g. peanuts..." className="flex-1 min-w-0 bg-white border border-red-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-300" />
+                    <button onClick={() => addAlg()} className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
+                  </div>
+                  {allergens.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {allergens.map((a, i) => <Tag key={i} label={a} color="red" onRemove={() => setAlgs(rAlgs.current.filter((_, j) => j !== i))} />)}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {COMMON_ALLERGENS.filter(a => !allergens.includes(a)).slice(0, 6).map(a => (
+                      <button key={a} onClick={() => addAlg(a)} className="text-xs text-red-400 hover:text-red-600 bg-white px-2.5 py-1 rounded-full font-medium border border-red-100">+ {a}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filters - 2 columns spanning 2 grid cols */}
+                <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 content-start">
+                  <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
+                  <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} allowOther={true} />
+                  <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
+                  <Dropdown label="Cook Time" options={TIME_OPTS} value={cookTime} onChange={setTime} />
+                  <Dropdown label="Cook Method" options={COOK_METHODS} value={cookMethod} onChange={setMethod} />
+                  <Dropdown label="Style" options={STYLES} value={style} onChange={setSty} />
+                </div>
+
+              </div>
+
+              {/* Row 2: Source + Find Recipes + Surprise Me */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+                <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shrink-0">
+                  <button onClick={() => setSearchMode("ai")}
+                    className={"px-5 py-3.5 text-sm font-bold transition-colors " + (searchMode === "ai" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50")}>
+                    🤖 AI Generated
+                  </button>
+                  <button onClick={() => setSearchMode("web")}
+                    className={"px-5 py-3.5 text-sm font-bold transition-colors " + (searchMode === "web" ? "bg-blue-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50")}>
+                    🔍 Search Web
                   </button>
                 </div>
-                <div className="flex gap-2 mb-3">
-                  <input value={ingInput} onChange={e => setIngInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addIng()}
-                    placeholder="Add ingredient..." className="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400" />
-                  <button onClick={() => addIng()} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
-                </div>
-                {ingredients.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {ingredients.map((ing, i) => <Tag key={i} label={ing} color="orange" onRemove={() => setIngs(rIngs.current.filter((_, j) => j !== i))} />)}
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  {SUGGESTED.filter(s => !ingredients.includes(s)).slice(0, 6).map(s => (
-                    <button key={s} onClick={() => addIng(s)} className="text-xs text-gray-400 hover:text-orange-600 hover:bg-orange-50 bg-gray-50 px-2.5 py-1 rounded-full font-medium border border-gray-100">+ {s}</button>
-                  ))}
-                </div>
+                <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
+                  {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
+                </button>
+                <button onClick={surpriseMe} disabled={surpriseLoading}
+                  className="bg-purple-500 hover:bg-purple-600 disabled:opacity-60 text-white px-6 py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
+                  {surpriseLoading ? <Spinner /> : <>✨ Surprise Me</>}
+                </button>
               </div>
 
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-red-50">
-                <h2 className="font-black text-gray-800 text-sm mb-3">🚫 Avoid / Allergies</h2>
-                <div className="flex gap-2 mb-3">
-                  <input value={algInput} onChange={e => setAlgInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addAlg()}
-                    placeholder="e.g. peanuts..." className="flex-1 min-w-0 bg-red-50 border border-red-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-300" />
-                  <button onClick={() => addAlg()} className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
-                </div>
-                {allergens.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {allergens.map((a, i) => <Tag key={i} label={a} color="red" onRemove={() => setAlgs(rAlgs.current.filter((_, j) => j !== i))} />)}
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  {COMMON_ALLERGENS.filter(a => !allergens.includes(a)).slice(0, 6).map(a => (
-                    <button key={a} onClick={() => addAlg(a)} className="text-xs text-red-400 hover:text-red-600 bg-red-50 px-2.5 py-1 rounded-full font-medium border border-red-100">+ {a}</button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
-                <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} allowOther={true} />
-                <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
-                <Dropdown label="Cook Time" options={TIME_OPTS} value={cookTime} onChange={setTime} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                <Dropdown label="Cook Method" options={COOK_METHODS} value={cookMethod} onChange={setMethod} />
-                <Dropdown label="Style" options={STYLES} value={style} onChange={setSty} />
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Source</label>
-                  <div className="flex rounded-xl overflow-hidden border border-gray-200">
-                    <button onClick={() => setSearchMode("ai")}
-                      className={"flex-1 py-2.5 text-sm font-bold transition-colors " + (searchMode === "ai" ? "bg-orange-500 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100")}>
-                      🤖 AI Generated
-                    </button>
-                    <button onClick={() => setSearchMode("web")}
-                      className={"flex-1 py-2.5 text-sm font-bold transition-colors " + (searchMode === "web" ? "bg-blue-500 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100")}>
-                      🔍 Search Web
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
-                {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
-              </button>
-              <button onClick={surpriseMe} disabled={surpriseLoading}
-                className="bg-purple-500 hover:bg-purple-600 disabled:opacity-60 text-white px-5 py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
-                {surpriseLoading ? <Spinner /> : <>✨ Surprise Me</>}
-              </button>
             </div>
             {error && <p className="text-red-400 text-sm text-center font-medium">{error}</p>}
 
