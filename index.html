@@ -351,8 +351,8 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
                     🔍 Search Web
                   </button>
                 </div>
-                <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500 disabled:opacity-60 text-white py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
+                <button onClick={ingredients.length > 0 && !loading ? findRecipes : undefined}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
                   {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
                 </button>
                 <button onClick={surpriseMe} disabled={surpriseLoading}
