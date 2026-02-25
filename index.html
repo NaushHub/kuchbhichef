@@ -50,275 +50,250 @@
         ? "bg-red-100 text-red-600 border-red-200"
         : "bg-orange-100 text-orange-700 border-orange-200";
       return (
-        <div className="min-h-screen bg-[#faf8f5] pb-16">
+        <div className="min-h-screen bg-[#faf8f5] flex justify-center p-4 pt-8 pb-16">
+          <div className="w-full max-w-7xl space-y-4">
 
-          {/* HERO BANNER */}
-          <div className="relative w-full h-56 sm:h-64 lg:h-72 overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1588165171080-c89acfa5ee83?w=1600&auto=format&fit=crop&q=80"
-              alt="Kitchen spices and ingredients"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60"></div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-              <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-full text-sm font-bold mb-3 shadow-lg">
+            <div className="text-center pb-2">
+              <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-full text-sm font-bold mb-4 shadow-sm">
                 🍳 Kuch Bhi Chef
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-lg">What's in your kitchen?</h1>
-              <p className="text-white/90 mt-2 text-sm sm:text-base italic max-w-xl drop-shadow">
-                When they tell you <span className="font-bold text-orange-400">Kuch bhi bana do</span> (make anything) —
-              </p>
-              <p className="text-white/75 text-xs sm:text-sm mt-1 drop-shadow">just tell me what you have and I'll cook up some ideas.</p>
-              <div className="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                ✨ Start cooking smarter — no recipe book needed
-              </div>
+              <h1 className="text-4xl font-black text-gray-900 tracking-tight">What's in your kitchen?</h1>
+              <p className="text-gray-500 mt-2 text-base italic">When they tell you <span className="font-bold text-orange-500">Kuch bhi bana do</span> (make anything) —</p>
+              <p className="text-gray-400 text-sm mt-1">just tell me what you have in the kitchen and I'll cook up some ideas.</p>
             </div>
-          </div>
 
-          {/* MAIN CONTENT */}
-          <div className="flex justify-center px-4 pt-5">
-            <div className="w-full max-w-7xl space-y-4">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-5">
 
-              {/* CONTROLS CARD */}
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-5">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
 
-                {/* Row 1: Ingredients + Allergies + Filters */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-
-                  {/* Ingredients */}
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <h2 className="font-black text-gray-800 text-sm">🧺 Your Ingredients</h2>
-                      <button onClick={randomize} className="text-xs text-gray-400 hover:text-orange-500 font-semibold">🔀 Random</button>
-                    </div>
-                    <div className="flex gap-2 mb-2">
-                      <input value={ingInput} onChange={e => setIngInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addIng()}
-                        placeholder="Add ingredient..." className="flex-1 min-w-0 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400" />
-                      <button onClick={() => addIng()} style={{backgroundColor:"#25D366"}} className="hover:opacity-90 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
-                    </div>
-                    {ingredients.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {ingredients.map((ing, i) => <Tag key={i} label={ing} color="orange" onRemove={() => setIngs(rIngs.current.filter((_, j) => j !== i))} />)}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {SUGGESTED.filter(s => !ingredients.includes(s)).slice(0, 6).map(s => (
-                        <button key={s} onClick={() => addIng(s)} className="text-xs text-gray-400 hover:text-orange-600 hover:bg-orange-50 bg-white px-2.5 py-1 rounded-full font-medium border border-gray-100">+ {s}</button>
-                      ))}
-                    </div>
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="font-black text-gray-800 text-sm">🧺 Your Ingredients</h2>
+                    <button onClick={randomize} className="text-xs text-gray-400 hover:text-orange-500 font-semibold">🔀 Random</button>
                   </div>
-
-                  {/* Allergies */}
-                  <div className="bg-red-50/50 rounded-2xl p-4 border border-red-100">
-                    <h2 className="font-black text-gray-800 text-sm mb-2">🚫 Avoid / Allergies</h2>
-                    <div className="flex gap-2 mb-2">
-                      <input value={algInput} onChange={e => setAlgInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addAlg()}
-                        placeholder="e.g. peanuts..." className="flex-1 min-w-0 bg-white border border-red-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-300" />
-                      <button onClick={() => addAlg()} className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
-                    </div>
-                    {allergens.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {allergens.map((a, i) => <Tag key={i} label={a} color="red" onRemove={() => setAlgs(rAlgs.current.filter((_, j) => j !== i))} />)}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {COMMON_ALLERGENS.filter(a => !allergens.includes(a)).slice(0, 6).map(a => (
-                        <button key={a} onClick={() => addAlg(a)} className="text-xs text-red-400 hover:text-red-600 bg-white px-2.5 py-1 rounded-full font-medium border border-red-100">+ {a}</button>
-                      ))}
-                    </div>
+                  <div className="flex gap-2 mb-2">
+                    <input value={ingInput} onChange={e => setIngInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addIng()}
+                      placeholder="Add ingredient..." className="flex-1 min-w-0 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400" />
+                    <button onClick={() => addIng()} style={{backgroundColor:"#25D366"}} className="hover:opacity-90 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
                   </div>
-
-                  {/* Filters */}
-                  <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3 content-start">
-                    <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
-                    <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} allowOther={true} />
-                    <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
-                    <Dropdown label="Cook Time" options={TIME_OPTS} value={cookTime} onChange={setTime} />
-                    <Dropdown label="Cook Method" options={COOK_METHODS} value={cookMethod} onChange={setMethod} />
-                    <Dropdown label="Style" options={STYLES} value={style} onChange={setSty} />
+                  {ingredients.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {ingredients.map((ing, i) => <Tag key={i} label={ing} color="orange" onRemove={() => setIngs(rIngs.current.filter((_, j) => j !== i))} />)}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUGGESTED.filter(s => !ingredients.includes(s)).slice(0, 6).map(s => (
+                      <button key={s} onClick={() => addIng(s)} className="text-xs text-gray-400 hover:text-orange-600 hover:bg-orange-50 bg-white px-2.5 py-1 rounded-full font-medium border border-gray-100">+ {s}</button>
+                    ))}
                   </div>
-
                 </div>
 
-                {/* Row 2: Source + Find Recipes + Surprise Me */}
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch">
-                  <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shrink-0">
-                    <button onClick={() => setSearchMode("ai")}
-                      className={"px-5 py-3.5 text-sm font-bold transition-colors " + (searchMode === "ai" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50")}>
-                      🤖 AI Generated
-                    </button>
-                    <button onClick={() => setSearchMode("web")}
-                      className={"px-5 py-3.5 text-sm font-bold transition-colors " + (searchMode === "web" ? "bg-blue-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50")}>
-                      🔍 Search Web
-                    </button>
+                <div className="bg-red-50/50 rounded-2xl p-4 border border-red-100">
+                  <h2 className="font-black text-gray-800 text-sm mb-2">🚫 Avoid / Allergies</h2>
+                  <div className="flex gap-2 mb-2">
+                    <input value={algInput} onChange={e => setAlgInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addAlg()}
+                      placeholder="e.g. peanuts..." className="flex-1 min-w-0 bg-white border border-red-100 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-300" />
+                    <button onClick={() => addAlg()} className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
                   </div>
-                  <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
-                    {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
-                  </button>
-                  <button onClick={surpriseMe} disabled={surpriseLoading}
-                    className="bg-purple-500 hover:bg-purple-600 disabled:opacity-60 text-white px-6 py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
-                    {surpriseLoading ? <Spinner /> : <>✨ Surprise Me</>}
-                  </button>
+                  {allergens.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {allergens.map((a, i) => <Tag key={i} label={a} color="red" onRemove={() => setAlgs(rAlgs.current.filter((_, j) => j !== i))} />)}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {COMMON_ALLERGENS.filter(a => !allergens.includes(a)).slice(0, 6).map(a => (
+                      <button key={a} onClick={() => addAlg(a)} className="text-xs text-red-400 hover:text-red-600 bg-white px-2.5 py-1 rounded-full font-medium border border-red-100">+ {a}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3 content-start">
+                  <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
+                  <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} allowOther={true} />
+                  <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
+                  <Dropdown label="Cook Time" options={TIME_OPTS} value={cookTime} onChange={setTime} />
+                  <Dropdown label="Cook Method" options={COOK_METHODS} value={cookMethod} onChange={setMethod} />
+                  <Dropdown label="Style" options={STYLES} value={style} onChange={setSty} />
                 </div>
 
               </div>
-              {error && <p className="text-red-400 text-sm text-center font-medium">{error}</p>}
 
-              {recipes && !selected && (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-                  <h2 className="font-black text-gray-800 text-sm mb-1">⚠️ Missing an ingredient from the recipes below?</h2>
-                  <p className="text-xs text-gray-400 mb-3">Add it here — I'll swap out recipes that need it and suggest new ones.</p>
-                  <div className="flex gap-2 mb-3">
-                    <input value={naInput} onChange={e => setNaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addNA()}
-                      placeholder="e.g. green chilli..." className="flex-1 min-w-0 bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400" />
-                    <button onClick={() => addNA()} className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+                <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shrink-0">
+                  <button onClick={() => setSearchMode("ai")}
+                    className={"px-5 py-3.5 text-sm font-bold transition-colors " + (searchMode === "ai" ? "bg-orange-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50")}>
+                    🤖 AI Generated
+                  </button>
+                  <button onClick={() => setSearchMode("web")}
+                    className={"px-5 py-3.5 text-sm font-bold transition-colors " + (searchMode === "web" ? "bg-blue-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50")}>
+                    🔍 Search Web
+                  </button>
+                </div>
+                <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
+                  {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
+                </button>
+                <button onClick={surpriseMe} disabled={surpriseLoading}
+                  className="bg-purple-500 hover:bg-purple-600 disabled:opacity-60 text-white px-6 py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
+                  {surpriseLoading ? <Spinner /> : <>✨ Surprise Me</>}
+                </button>
+              </div>
+
+            </div>
+            {error && <p className="text-red-400 text-sm text-center font-medium">{error}</p>}
+
+            {recipes && !selected && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                <h2 className="font-black text-gray-800 text-sm mb-1">⚠️ Missing an ingredient from the recipes below?</h2>
+                <p className="text-xs text-gray-400 mb-3">Add it here — I'll swap out recipes that need it and suggest new ones.</p>
+                <div className="flex gap-2 mb-3">
+                  <input value={naInput} onChange={e => setNaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addNA()}
+                    placeholder="e.g. green chilli..." className="flex-1 min-w-0 bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-amber-400" />
+                  <button onClick={() => addNA()} className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl flex-shrink-0 font-bold">+</button>
+                </div>
+                {notAvailable.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {notAvailable.map((a, i) => (
+                        <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border bg-amber-100 text-amber-700 border-amber-200">
+                          {a}<button onClick={() => setNA(rNA.current.filter((_, j) => j !== i))}>
+                            <svg className="w-3 h-3 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <button onClick={applyFilter} disabled={filtering}
+                      className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-2">
+                      {filtering ? <><Spinner /> Finding replacements...</> : "✨ Update Recipe List"}
+                    </button>
                   </div>
-                  {notAvailable.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-1.5">
-                        {notAvailable.map((a, i) => (
-                          <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border bg-amber-100 text-amber-700 border-amber-200">
-                            {a}<button onClick={() => setNA(rNA.current.filter((_, j) => j !== i))}>
-                              <svg className="w-3 h-3 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
-                          </span>
-                        ))}
+                )}
+              </div>
+            )}
+
+            {recipes && !selected && (
+              <div className="space-y-3">
+                <h2 className="font-black text-gray-800 text-lg">✨ Recipe Ideas</h2>
+                {recipes.map((r, i) => {
+                  const missing = r.missing_ingredients || [];
+                  const available = getAvailable(r);
+                  return (
+                    <button key={i} onClick={() => openRecipe(r)}
+                      className="w-full bg-white rounded-2xl p-5 text-left hover:shadow-md transition-all shadow-sm border border-gray-100 group">
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl mt-1">{r.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-black text-gray-900 text-base group-hover:text-orange-500 transition-colors">{r.name}</h3>
+                          <p className="text-gray-400 text-sm mt-0.5 mb-2">{r.description}</p>
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="inline-flex items-center gap-1 text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-bold border border-orange-100">⏱ {r.time}</span>
+                            <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-bold">⚡ {r.difficulty}</span>
+                            {r.calories && <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-bold border border-green-100">🔥 {r.calories}</span>}
+                            {r.servings && <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-500 px-2.5 py-1 rounded-full font-bold border border-blue-100">👤 {r.servings}</span>}
+                          </div>
+                          {available.length > 0 && (
+                            <div className="flex flex-wrap gap-1 items-center mb-1">
+                              <span className="text-xs text-gray-400 font-semibold">You have:</span>
+                              {available.map((a, j) => (
+                                <span key={j} className="text-xs text-green-600 font-semibold bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">{a}</span>
+                              ))}
+                            </div>
+                          )}
+                          {missing.length > 0 && (
+                            <div className="flex flex-wrap gap-1 items-center">
+                              <span className="text-xs text-gray-400 font-semibold">You may also need:</span>
+                              {missing.map((m, j) => (
+                                <span key={j} className="text-xs text-red-500 font-semibold bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">{m}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-gray-300 group-hover:text-orange-400 text-lg mt-1">›</span>
                       </div>
-                      <button onClick={applyFilter} disabled={filtering}
-                        className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white py-2.5 rounded-xl text-sm font-black flex items-center justify-center gap-2">
-                        {filtering ? <><Spinner /> Finding replacements...</> : "✨ Update Recipe List"}
-                      </button>
+                    </button>
+                  );
+                })}
+                <button onClick={loadMore} disabled={loadingMore}
+                  className="w-full bg-white hover:bg-orange-50 border-2 border-dashed border-orange-200 hover:border-orange-400 text-orange-500 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2">
+                  {loadingMore ? <><Spinner /> Loading more...</> : "＋ Load More Recipes"}
+                </button>
+              </div>
+            )}
+
+            {selected && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="relative h-64 bg-orange-50 overflow-hidden">
+                  <img src={`https://source.unsplash.com/800x400/?${encodeURIComponent(selected.name + " food plated")}`}
+                    alt={selected.name} className="w-full h-full object-cover"
+                    onError={e => { e.target.style.display = "none"; }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+                  <div className="absolute bottom-5 left-6 text-white">
+                    <div className="text-4xl mb-1">{selected.emoji}</div>
+                    <h2 className="text-2xl font-black drop-shadow">{selected.name}</h2>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">⏱ {selected.time}</span>
+                      <span className="inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">⚡ {selected.difficulty}</span>
+                      {selected.calories && <span className="text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">🔥 {selected.calories}</span>}
+                      {selected.servings && <span className="text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">👤 {selected.servings}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-7">
+                  <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 font-bold mb-5 transition-colors">
+                    ← Back to results
+                  </button>
+                  <p className="text-gray-400 mb-7">{selected.description}</p>
+
+                  <div className="mb-8">
+                    <h3 className="font-black text-gray-800 mb-3 text-xs uppercase tracking-wide">Ingredients & Measurements</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(selected._tagged || []).map((ing, i) => (
+                        <div key={i} className="flex flex-row items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                          <span className={`text-sm font-semibold capitalize ${ing.isMissing ? "text-red-500" : "text-green-600"}`}>{ing.name}</span>
+                          <span className={`text-sm font-bold ml-2 shrink-0 ${ing.isMissing ? "text-red-400" : "text-green-500"}`}>{ing.amount} {ing.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {(selected.missing_ingredients || []).length > 0 && (
+                      <p className="text-xs text-red-400 mt-2 font-medium">🔴 Red = you'll need to grab these</p>
+                    )}
+                  </div>
+
+                  <div className="mb-7">
+                    <h3 className="font-black text-gray-800 mb-4 text-xs uppercase tracking-wide">Steps</h3>
+                    <div className="space-y-6">
+                      {(selected.steps || []).map((step, i) => {
+                        const instruction = typeof step === "string" ? step : step.instruction;
+                        const imgSrc = stepImages[i];
+                        return (
+                          <div key={i} className="flex gap-4 items-start">
+                            <span className="w-7 h-7 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">{i + 1}</span>
+                            <div className="flex-1">
+                              <p className="text-gray-600 leading-relaxed text-sm mb-2">{instruction}</p>
+                              {imgSrc && (
+                                <div className="rounded-xl overflow-hidden h-36 bg-gray-100">
+                                  <img src={imgSrc} alt={`step ${i + 1}`} className="w-full h-full object-cover"
+                                    onError={e => { e.target.parentElement.style.display = "none"; }} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {selected.tip && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                      <p className="text-amber-700 text-sm font-medium">💡 <strong>Pro tip:</strong> {selected.tip}</p>
                     </div>
                   )}
                 </div>
-              )}
+              </div>
+            )}
 
-              {recipes && !selected && (
-                <div className="space-y-3">
-                  <h2 className="font-black text-gray-800 text-lg">✨ Recipe Ideas</h2>
-                  {recipes.map((r, i) => {
-                    const missing = r.missing_ingredients || [];
-                    const available = getAvailable(r);
-                    return (
-                      <button key={i} onClick={() => openRecipe(r)}
-                        className="w-full bg-white rounded-2xl p-5 text-left hover:shadow-md transition-all shadow-sm border border-gray-100 group">
-                        <div className="flex items-start gap-3">
-                          <span className="text-3xl mt-1">{r.emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-black text-gray-900 text-base group-hover:text-orange-500 transition-colors">{r.name}</h3>
-                            <p className="text-gray-400 text-sm mt-0.5 mb-2">{r.description}</p>
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className="inline-flex items-center gap-1 text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-bold border border-orange-100">⏱ {r.time}</span>
-                              <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-bold">⚡ {r.difficulty}</span>
-                              {r.calories && <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-bold border border-green-100">🔥 {r.calories}</span>}
-                              {r.servings && <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-500 px-2.5 py-1 rounded-full font-bold border border-blue-100">👤 {r.servings}</span>}
-                            </div>
-                            {available.length > 0 && (
-                              <div className="flex flex-wrap gap-1 items-center mb-1">
-                                <span className="text-xs text-gray-400 font-semibold">You have:</span>
-                                {available.map((a, j) => (
-                                  <span key={j} className="text-xs text-green-600 font-semibold bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">{a}</span>
-                                ))}
-                              </div>
-                            )}
-                            {missing.length > 0 && (
-                              <div className="flex flex-wrap gap-1 items-center">
-                                <span className="text-xs text-gray-400 font-semibold">You may also need:</span>
-                                {missing.map((m, j) => (
-                                  <span key={j} className="text-xs text-red-500 font-semibold bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">{m}</span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-gray-300 group-hover:text-orange-400 text-lg mt-1">›</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                  <button onClick={loadMore} disabled={loadingMore}
-                    className="w-full bg-white hover:bg-orange-50 border-2 border-dashed border-orange-200 hover:border-orange-400 text-orange-500 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2">
-                    {loadingMore ? <><Spinner /> Loading more...</> : "＋ Load More Recipes"}
-                  </button>
-                </div>
-              )}
-
-              {selected && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="relative h-64 bg-orange-50 overflow-hidden">
-                    <img src={`https://source.unsplash.com/800x400/?${encodeURIComponent(selected.name + " food plated")}`}
-                      alt={selected.name} className="w-full h-full object-cover"
-                      onError={e => { e.target.style.display = "none"; }} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
-                    <div className="absolute bottom-5 left-6 text-white">
-                      <div className="text-4xl mb-1">{selected.emoji}</div>
-                      <h2 className="text-2xl font-black drop-shadow">{selected.name}</h2>
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">⏱ {selected.time}</span>
-                        <span className="inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">⚡ {selected.difficulty}</span>
-                        {selected.calories && <span className="text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">🔥 {selected.calories}</span>}
-                        {selected.servings && <span className="text-xs bg-white/20 backdrop-blur px-2.5 py-1 rounded-full font-bold">👤 {selected.servings}</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-7">
-                    <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 font-bold mb-5 transition-colors">
-                      ← Back to results
-                    </button>
-                    <p className="text-gray-400 mb-7">{selected.description}</p>
-
-                    <div className="mb-8">
-                      <h3 className="font-black text-gray-800 mb-3 text-xs uppercase tracking-wide">Ingredients & Measurements</h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(selected._tagged || []).map((ing, i) => (
-                          <div key={i} className="flex flex-row items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
-                            <span className={`text-sm font-semibold capitalize ${ing.isMissing ? "text-red-500" : "text-green-600"}`}>{ing.name}</span>
-                            <span className={`text-sm font-bold ml-2 shrink-0 ${ing.isMissing ? "text-red-400" : "text-green-500"}`}>{ing.amount} {ing.unit}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {(selected.missing_ingredients || []).length > 0 && (
-                        <p className="text-xs text-red-400 mt-2 font-medium">🔴 Red = you'll need to grab these</p>
-                      )}
-                    </div>
-
-                    <div className="mb-7">
-                      <h3 className="font-black text-gray-800 mb-4 text-xs uppercase tracking-wide">Steps</h3>
-                      <div className="space-y-6">
-                        {(selected.steps || []).map((step, i) => {
-                          const instruction = typeof step === "string" ? step : step.instruction;
-                          const imgSrc = stepImages[i];
-                          return (
-                            <div key={i} className="flex gap-4 items-start">
-                              <span className="w-7 h-7 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">{i + 1}</span>
-                              <div className="flex-1">
-                                <p className="text-gray-600 leading-relaxed text-sm mb-2">{instruction}</p>
-                                {imgSrc && (
-                                  <div className="rounded-xl overflow-hidden h-36 bg-gray-100">
-                                    <img src={imgSrc} alt={`step ${i + 1}`} className="w-full h-full object-cover"
-                                      onError={e => { e.target.parentElement.style.display = "none"; }} />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {selected.tip && (
-                      <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                        <p className="text-amber-700 text-sm font-medium">💡 <strong>Pro tip:</strong> {selected.tip}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-            </div>
           </div>
-
         </div>
       );
     }
