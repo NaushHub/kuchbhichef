@@ -26,10 +26,12 @@
 
     const SUGGESTED = ["chicken","eggs","pasta","rice","tomatoes","onion","garlic","butter","cheese","spinach","potatoes","lemon","olive oil","bread","milk"];
     const COMMON_ALLERGENS = ["nuts","peanuts","shellfish","fish","eggs","dairy","gluten","soy","sesame","wheat"];
-    const MEAL_TYPES = ["Any","Breakfast","Tiffin","Lunch","Dinner","Snack","Dessert"];
-    const DIETARY = ["None","Non-Veg","Halal","Vegetarian","Vegan","Gluten-Free","Dairy-Free","Low-Carb","High-Protein"];
+    const MEAL_TYPES = ["Any","Breakfast","Tiffin","Lunch","Dinner","Snack","Dessert","Soups"];
+    const DIETARY = ["None","Non-Veg","Halal","Vegetarian","Vegan","Gluten-Free","Dairy-Free","Oil-Free","Low-Carb","High-Protein"];
     const TIME_OPTS = ["Under 15 min","Under 30 min","Under 1 hour","No limit"];
     const CUISINES = ["Any","Indian","Italian","Chinese","Thai","American","Middle Eastern","Korean","Japanese","Mexican","Other"];
+    const COOK_METHODS = ["Any","Microwave Only","Stovetop Only","No Oven","Air Fryer","One Pot","Pressure Cooker"];
+    const STYLES = ["Any","Home Style","Restaurant Style","Street Food","Prep & Freeze"];
     const SCHEMA = `{"recipes":[{"name":"","time":"","difficulty":"","emoji":"","description":"","calories":"","servings":"","ingredients_needed":[{"name":"","amount":"","unit":"","have":true}],"missing_ingredients":[],"steps":[{"instruction":"","visual":""}],"tip":""}]}`;
 
     async function claudeComplete(prompt) {
@@ -155,9 +157,14 @@
       const [error, setError] = useState("");
       const [naInput, setNaInput] = useState("");
       const [notAvailable, setNotAvailable] = useState([]);
+      const [cookMethod, setCookMethod] = useState("Any");
+      const [style, setStyle] = useState("Any");
+      const [searchMode, setSearchMode] = useState("ai");
+      const [surpriseLoading, setSurpriseLoading] = useState(false);
 
       const rIngs = useRef([]); const rAlgs = useRef([]); const rNA = useRef([]);
       const rMeal = useRef(["Any"]); const rDiet = useRef(["None"]);
+      const rMethod = useRef("Any"); const rStyle = useRef("Any");
       const rTime = useRef("No limit"); const rCuis = useRef(["Any"]);
       const rRecipes = useRef(null);
 
@@ -169,6 +176,8 @@
       const setDiet = si(setDietary, rDiet);
       const setTime = si(setCookTime, rTime);
       const setCuis = si(setCuisine, rCuis);
+      const setMethod = v => { setCookMethod(v); rMethod.current = v; };
+      const setSty = v => { setStyle(v); rStyle.current = v; };
       const setRecs = v => { setRecipes(v); rRecipes.current = v; };
 
       const addIng = val => {
@@ -192,9 +201,27 @@
         const avoid = [...rAlgs.current, ...rNA.current];
         return `You are a creative chef. Ingredients available: ${rIngs.current.join(", ")}.
 Meal type: ${rMeal.current.join(", ")}. Dietary: ${rDiet.current.join(", ")}. Time: ${rTime.current}. Cuisine: ${rCuis.current.join(", ")}.
+${rMethod.current !== "Any" ? `Cook method: ${rMethod.current}.` : ""}
+${rStyle.current !== "Any" ? `Style: ${rStyle.current}.` : ""}
 ${avoid.length ? `STRICT — never use: ${avoid.join(", ")}.` : ""}
 ${exclude.length ? `Do NOT repeat these recipes: ${exclude.join(", ")}.` : ""}
 Suggest exactly ${count} recipe${count > 1 ? "s" : ""}. For each ingredient, set "have":true if the ingredient is in the user's available list, "have":false if it is not. Also populate missing_ingredients with names of ingredients where have=false. Include estimated "calories" per serving as a string like "320 kcal" and "servings" as a string like "Serves 2" or "Serves 4". For each step include a short "visual" (5-8 words) for image search.
+Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
+      };
+
+      const buildWebSearchPrompt = (count, exclude = []) => {
+        const avoid = [...rAlgs.current, ...rNA.current];
+        return `Search the web for real recipes using these ingredients: ${rIngs.current.join(", ")}.
+Meal type: ${rMeal.current.join(", ")}. Dietary: ${rDiet.current.join(", ")}. Time: ${rTime.current}. Cuisine: ${rCuis.current.join(", ")}.
+${rMethod.current !== "Any" ? `Cook method: ${rMethod.current}.` : ""}
+${rStyle.current !== "Any" ? `Style: ${rStyle.current}.` : ""}
+${avoid.length ? `STRICT — never use: ${avoid.join(", ")}.` : ""}
+${exclude.length ? `Do NOT repeat these: ${exclude.join(", ")}.` : ""}
+Find exactly ${count} real recipes from cooking websites. Return ONLY raw JSON, no markdown: ${SCHEMA}`;
+      };
+
+      const surprisePrompt = () => {
+        return `You are a wildly creative chef. Suggest ONE completely unexpected, creative recipe that most people have never thought of. Be imaginative — fusion, unusual combinations, surprising techniques. Do NOT use the user's ingredient list — just be creative.
 Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
       };
 
@@ -225,10 +252,20 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
         if (!rIngs.current.length) return;
         setLoading(true); setRecs(null); setSelected(null); setError(""); setNA([]);
         try {
-          const text = await claudeComplete(buildPrompt(2));
+          const prompt = searchMode === "web" ? buildWebSearchPrompt(3) : buildPrompt(3);
+          const text = await claudeComplete(prompt);
           setRecs(parse(text));
         } catch (e) { setError("Error: " + e.message); }
         finally { setLoading(false); }
+      };
+
+      const surpriseMe = async () => {
+        setSurpriseLoading(true); setRecs(null); setSelected(null); setError("");
+        try {
+          const text = await claudeComplete(surprisePrompt());
+          setRecs(parse(text));
+        } catch (e) { setError("Error: " + e.message); }
+        finally { setSurpriseLoading(false); }
       };
 
       const loadMore = async () => {
@@ -328,19 +365,42 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
                 <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} allowOther={true} />
                 <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
                 <Dropdown label="Cook Time" options={TIME_OPTS} value={cookTime} onChange={setTime} />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <Dropdown label="Cook Method" options={COOK_METHODS} value={cookMethod} onChange={setMethod} />
+                <Dropdown label="Style" options={STYLES} value={style} onChange={setSty} />
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Source</label>
+                  <div className="flex rounded-xl overflow-hidden border border-gray-200">
+                    <button onClick={() => setSearchMode("ai")}
+                      className={"flex-1 py-2.5 text-sm font-bold transition-colors " + (searchMode === "ai" ? "bg-orange-500 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100")}>
+                      🤖 AI Generated
+                    </button>
+                    <button onClick={() => setSearchMode("web")}
+                      className={"flex-1 py-2.5 text-sm font-bold transition-colors " + (searchMode === "web" ? "bg-blue-500 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100")}>
+                      🔍 Search Web
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
-              {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
-            </button>
+            <div className="flex gap-3">
+              <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
+                {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
+              </button>
+              <button onClick={surpriseMe} disabled={surpriseLoading}
+                className="bg-purple-500 hover:bg-purple-600 disabled:opacity-60 text-white px-5 py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
+                {surpriseLoading ? <Spinner /> : <>✨ Surprise Me</>}
+              </button>
+            </div>
             {error && <p className="text-red-400 text-sm text-center font-medium">{error}</p>}
 
             {recipes && !selected && (
@@ -450,9 +510,9 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
                     <h3 className="font-black text-gray-800 mb-3 text-xs uppercase tracking-wide">Ingredients & Measurements</h3>
                     <div className="grid grid-cols-2 gap-2">
                       {(selected._tagged || []).map((ing, i) => (
-                        <div key={i} className="flex flex-col px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                        <div key={i} className="flex flex-row items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
                           <span className={`text-sm font-semibold capitalize ${ing.isMissing ? "text-red-500" : "text-green-600"}`}>{ing.name}</span>
-                          <span className={`text-xs font-bold mt-0.5 ${ing.isMissing ? "text-red-400" : "text-green-500"}`}>{ing.amount} {ing.unit}</span>
+                          <span className={`text-sm font-bold ml-2 shrink-0 ${ing.isMissing ? "text-red-400" : "text-green-500"}`}>{ing.amount} {ing.unit}</span>
                         </div>
                       ))}
                     </div>
