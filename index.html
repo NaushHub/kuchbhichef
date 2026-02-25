@@ -95,17 +95,17 @@
         <div className="relative" ref={ref}>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">{label}</label>
           <button onClick={() => setOpen(o => !o)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 outline-none text-left flex items-center justify-between hover:border-orange-400 transition-colors">
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none text-left flex items-center justify-between hover:border-orange-400 transition-colors">
             <span className="truncate">{display}</span>
             <span className="ml-1 text-gray-400">{open ? "▲" : "▼"}</span>
           </button>
           {open && (
-            <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 mt-1 w-full min-w-0 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto overflow-x-hidden">
               {options.filter(o => o !== "Other").map(o => {
                 const sel = value.includes(o);
                 return (
                   <button key={o} onClick={() => toggle(o)}
-                    className={"w-full text-left px-3 py-1.5 text-sm font-semibold flex items-center justify-between transition-colors " + (sel ? "bg-orange-50 text-orange-600" : "text-gray-700 hover:bg-gray-50")}>
+                    className={"w-full text-left px-3 py-1 text-sm flex items-center justify-between transition-colors " + (sel ? "bg-orange-50 text-orange-600" : "text-gray-700 hover:bg-gray-50")}>
                     {o}{sel && <span className="text-orange-500 text-xs">✓</span>}
                   </button>
                 );
@@ -286,7 +286,7 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
             </div>
 
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-5">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
                 <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                   <div className="flex items-center justify-between mb-2">
@@ -352,7 +352,7 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
                   </button>
                 </div>
                 <button onClick={findRecipes} disabled={ingredients.length === 0 || loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
+                  className="flex-1 bg-orange-100 hover:bg-orange-200 disabled:bg-gray-100 disabled:text-gray-400 text-orange-600 border-2 border-orange-500 py-3.5 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-sm">
                   {loading ? <><Spinner /> Finding recipes...</> : <>🍽️ Find Recipes</>}
                 </button>
                 <button onClick={surpriseMe} disabled={surpriseLoading}
