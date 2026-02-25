@@ -202,7 +202,7 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
         if (!rIngs.current.length) return;
         setLoading(true); setRecs(null); setSelected(null); setError(""); setNA([]);
         try {
-          const text = await claudeComplete(buildPrompt(2));
+          const text = await claudeComplete(buildPrompt(4));
           setRecs(parse(text));
         } catch (e) { setError("Error: " + e.message); }
         finally { setLoading(false); }
