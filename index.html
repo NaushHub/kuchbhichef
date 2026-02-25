@@ -202,7 +202,7 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
         if (!rIngs.current.length) return;
         setLoading(true); setRecs(null); setSelected(null); setError(""); setNA([]);
         try {
-          const text = await claudeComplete(buildPrompt(4));
+          const text = await claudeComplete(buildPrompt(2));
           setRecs(parse(text));
         } catch (e) { setError("Error: " + e.message); }
         finally { setLoading(false); }
@@ -260,7 +260,7 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
               <p className="text-gray-400 text-sm mt-1">just tell me what you have in the kitchen and I'll cook up some ideas.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-black text-gray-800 text-sm">🧺 Your Ingredients</h2>
@@ -306,7 +306,7 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
             </div>
 
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
                 <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} />
                 <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
