@@ -27,13 +27,9 @@
     const SUGGESTED = ["chicken","eggs","pasta","rice","tomatoes","onion","garlic","butter","cheese","spinach","potatoes","lemon","olive oil","bread","milk"];
     const COMMON_ALLERGENS = ["nuts","peanuts","shellfish","fish","eggs","dairy","gluten","soy","sesame","wheat"];
     const MEAL_TYPES = ["Any","Breakfast","Tiffin","Lunch","Dinner","Snack","Dessert"];
-    const DIETARY = ["None","Vegetarian","Vegan","Gluten-Free","Dairy-Free","Low-Carb","High-Protein"];
+    const DIETARY = ["None","Non-Veg","Halal","Vegetarian","Vegan","Gluten-Free","Dairy-Free","Low-Carb","High-Protein"];
     const TIME_OPTS = ["Under 15 min","Under 30 min","Under 1 hour","No limit"];
-    const CUISINES = [
-      {label:"Any",emoji:"🌍"},{label:"Indian",emoji:"🇮🇳"},{label:"Italian",emoji:"🇮🇹"},
-      {label:"Chinese",emoji:"🇨🇳"},{label:"Thai",emoji:"🇹🇭"},{label:"American",emoji:"🇺🇸"},
-      {label:"Middle Eastern",emoji:"🌙"},{label:"Korean",emoji:"🇰🇷"},
-    ];
+    const CUISINES = ["Any","Indian","Italian","Chinese","Thai","American","Middle Eastern","Korean","Japanese","Mexican","Other"];
     const SCHEMA = `{"recipes":[{"name":"","time":"","difficulty":"","emoji":"","description":"","calories":"","servings":"","ingredients_needed":[{"name":"","amount":"","unit":"","have":true}],"missing_ingredients":[],"steps":[{"instruction":"","visual":""}],"tip":""}]}`;
 
     async function claudeComplete(prompt) {
@@ -73,17 +69,35 @@
       );
     }
 
-    function MultiSelect({ label, options, value, onChange }) {
+    function MultiSelect({ label, options, value, onChange, allowOther }) {
       const [open, setOpen] = useState(false);
+      const [otherVal, setOtherVal] = useState("");
+      const ref = React.useRef(null);
+
+      React.useEffect(() => {
+        function handleOutside(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+        document.addEventListener("mousedown", handleOutside);
+        return () => document.removeEventListener("mousedown", handleOutside);
+      }, []);
+
       const toggle = opt => {
         if (opt === "Any" || opt === "None") { onChange([opt]); setOpen(false); return; }
         const filtered = value.filter(v => v !== "Any" && v !== "None");
         const next = filtered.includes(opt) ? filtered.filter(v => v !== opt) : [...filtered, opt];
         onChange(next.length ? next : ["Any"]);
       };
+
+      const addOther = () => {
+        const v = otherVal.trim();
+        if (!v) return;
+        const filtered = value.filter(v2 => v2 !== "Any" && v2 !== "None");
+        if (!filtered.includes(v)) onChange([...filtered, v]);
+        setOtherVal(""); setOpen(false);
+      };
+
       const display = value.join(", ") || "Any";
       return (
-        <div className="relative">
+        <div className="relative" ref={ref}>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">{label}</label>
           <button onClick={() => setOpen(o => !o)}
             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 outline-none text-left flex items-center justify-between hover:border-orange-400 transition-colors">
@@ -91,19 +105,28 @@
             <span className="ml-1 text-gray-400">{open ? "▲" : "▼"}</span>
           </button>
           {open && (
-            <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-              {options.map(o => {
+            <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+              {options.filter(o => o !== "Other").map(o => {
                 const val = typeof o === "string" ? o : o.label;
-                const lbl = typeof o === "string" ? o : `${o.emoji} ${o.label}`;
                 const sel = value.includes(val);
                 return (
                   <button key={val} onClick={() => toggle(val)}
-                    className={`w-full text-left px-3 py-1 text-sm font-semibold flex items-center justify-between transition-colors ${sel ? "bg-orange-50 text-orange-600" : "text-gray-700 hover:bg-gray-50"}`}>
-                    {lbl}
+                    className={"w-full text-left px-3 py-2 text-sm font-semibold flex items-center justify-between transition-colors " + (sel ? "bg-orange-50 text-orange-600" : "text-gray-700 hover:bg-gray-50")}>
+                    {val}
                     {sel && <span className="text-orange-500 text-xs">✓</span>}
                   </button>
                 );
               })}
+              {allowOther && (
+                <div className="px-3 py-2 border-t border-gray-100">
+                  <div className="flex gap-1">
+                    <input value={otherVal} onChange={e => setOtherVal(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && addOther()}
+                      placeholder="Type other..." className="flex-1 text-sm border border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-orange-400" />
+                    <button onClick={addOther} className="bg-orange-500 text-white text-xs px-2 py-1 rounded-lg font-bold">Add</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -308,7 +331,7 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <MultiSelect label="Meal Type" options={MEAL_TYPES} value={mealType} onChange={setMeal} />
-                <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} />
+                <MultiSelect label="Cuisine" options={CUISINES} value={cuisine} onChange={setCuis} allowOther={true} />
                 <MultiSelect label="Dietary" options={DIETARY} value={dietary} onChange={setDiet} />
                 <Dropdown label="Cook Time" options={TIME_OPTS} value={cookTime} onChange={setTime} />
               </div>
@@ -427,9 +450,9 @@ Respond ONLY in raw JSON, no markdown: ${SCHEMA}`;
                     <h3 className="font-black text-gray-800 mb-3 text-xs uppercase tracking-wide">Ingredients & Measurements</h3>
                     <div className="grid grid-cols-2 gap-2">
                       {(selected._tagged || []).map((ing, i) => (
-                        <div key={i} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                        <div key={i} className="flex flex-col px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
                           <span className={`text-sm font-semibold capitalize ${ing.isMissing ? "text-red-500" : "text-green-600"}`}>{ing.name}</span>
-                          <span className={`text-sm font-bold ml-3 whitespace-nowrap ${ing.isMissing ? "text-red-400" : "text-green-500"}`}>{ing.amount} {ing.unit}</span>
+                          <span className={`text-xs font-bold mt-0.5 ${ing.isMissing ? "text-red-400" : "text-green-500"}`}>{ing.amount} {ing.unit}</span>
                         </div>
                       ))}
                     </div>
